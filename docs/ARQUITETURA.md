@@ -52,7 +52,7 @@ O desenho multi-região da §3 é **alvo documentado, não trabalho agendado**. 
 | Renderização Markdown | `markdown-it-py` | MIT |
 | Sanitização HTML | `nh3` (Rust/ammonia) | MIT |
 | Armazenamento de objetos | Garage | AGPL-3.0 |
-| Alta disponibilidade Postgres | Patroni + etcd | MIT / Apache-2.0 |
+| Alta disponibilidade Postgres | responsabilidade do provedor gerenciado (§14) | — |
 | Proxy / TLS | Caddy ou nginx | Apache-2.0 / BSD |
 | Métricas | Prometheus + Grafana | Apache-2.0 / AGPL-3.0 |
 | Erros | GlitchTip | MIT |
@@ -90,7 +90,7 @@ Alpine.js cobre o pouco de estado local necessário: menus, seletor de emoji, co
 
 > **Estado desta seção: alvo, não trabalho agendado.** O multi-região é a última fase do roadmap (§11, Fase 5). Até lá o fórum roda em **uma região**: Caddy, Django, um Postgres, um Redis, um Garage. Esta seção existe para que nenhuma decisão das fases anteriores feche a porta.
 >
-> Do que está aqui, apenas três itens entram desde a Fase 0, porque são caros de introduzir depois: **collation ICU** (§6.1), **sessão em cookie assinado** (§3.5) e **agregação de escritas de alta frequência** (§8). O resto — roteador de banco, Patroni, réplicas, Garage distribuído — fica para a Fase 5.
+> Do que está aqui, apenas três itens entram desde a Fase 0, porque são caros de introduzir depois: **collation ICU** (§6.1), **sessão em cookie assinado** (§3.5) e **agregação de escritas de alta frequência** (§8). O resto — roteador de banco, réplicas, Garage distribuído — fica para a Fase 5, e o failover do banco é do provedor (§14).
 
 ### 3.1 Topologia
 
@@ -108,12 +108,14 @@ Alpine.js cobre o pouco de estado local necessário: menus, seletor de emoji, co
    ║  Django  ×N           ║            ║  Django  ×N           ║
    ║  Redis (local)        ║            ║  Redis (local)        ║
    ║  Postgres PRIMÁRIO ───╫──────────► ║  Postgres RÉPLICA     ║
-   ║  Patroni + etcd       ║  streaming ║  Patroni + etcd       ║
+   ║  (failover: provedor) ║  streaming ║  (failover: provedor) ║
    ║  Garage (nó)      ────╫──────────► ║  Garage (nó)          ║
    ╚═══════════════════════╝            ╚═══════════════════════╝
 ```
 
-Regiões adicionais replicam o desenho da B. Mínimo viável: duas regiões. Recomendado: três, porque o etcd do Patroni precisa de quorum ímpar para eleger novo primário sem intervenção humana.
+Regiões adicionais replicam o desenho da B. Mínimo viável: duas regiões.
+
+O PostgreSQL do diagrama é **gerenciado** (§14): a promoção de réplica e o quorum de eleição são do provedor. O que continua sendo nosso é tudo acima da linha do banco — as regiões de aplicação, o roteamento de leitura e a fixação no primário.
 
 ### 3.2 Escrita e leitura
 
@@ -150,7 +152,9 @@ Custo: uma fração pequena das leituras vai ao primário. Benefício: a inconsi
 
 ### 3.4 Failover
 
-**Patroni** com etcd gerencia o cluster Postgres. Se o primário fica indisponível, Patroni promove uma réplica e atualiza o endpoint que a aplicação consulta.
+O failover do banco é **do provedor gerenciado** (§14). Se o primário fica indisponível, o provedor promove uma réplica e mantém o endpoint estável — a aplicação reconecta sozinha, sem cluster nosso para operar.
+
+O que precisamos garantir do nosso lado é o comportamento durante a janela de promoção, descrito a seguir.
 
 Consequências aceitas:
 
@@ -546,7 +550,8 @@ Contadores agregados (`post_count`, `topic_count`, `view_count`, `ReactionCount`
 
 > Com o multi-região adiado para a Fase 5, **backup é a disponibilidade do projeto**. Da Fase 0 à 4 não existe segunda cópia viva dos dados — o backup é a única. Esta subseção deixa de ser rotina operacional e passa a ser o item de infraestrutura mais crítico do documento. Entra na Fase 0, não depois.
 
-- **pgBackRest** — backup full semanal, incremental diário, WAL arquivado continuamente para o Garage. Permite PITR (recuperação a um instante arbitrário).
+- **PITR é do provedor gerenciado** (§14): backup contínuo e recuperação a um instante arbitrário fazem parte do serviço. Confirme a janela de retenção do WAL — precisa cobrir o intervalo entre o erro acontecer e alguém perceber, que num fórum é medido em dias.
+- **Cópia fria fora do provedor**, nossa: `pg_dump` periódico para o Garage ou outro S3. Conta suspensa ou projeto excluído por engano levam junto os backups que moram lá dentro.
 - Réplica **não é backup**. Um `DELETE` acidental replica em milissegundos.
 - Restauração testada por rotina automática mensal, em ambiente descartável. Backup nunca testado deve ser considerado inexistente.
 - Garage já replica os objetos entre regiões; ainda assim, uma cópia fria em provedor distinto.
@@ -584,6 +589,7 @@ Contadores agregados (`post_count`, `topic_count`, `view_count`, `ReactionCount`
 | 8 | Busca nativa do Postgres | Elasticsearch, Meilisearch | Sem serviço extra para operar nem sincronizar |
 | 9 | Sessão em cookie assinado | Sessão em Redis | Válida em qualquer região sem replicar estado |
 | 10 | AGPL-3.0 | MIT, GPL-3.0 | Software de rede; impede fork fechado servido como serviço |
+| 11 | **PostgreSQL gerenciado** | VPS auto-gerido com Patroni | Backup, PITR e failover deixam de ser trabalho de voluntário — o risco dominante (§12) vira responsabilidade contratada. Ver §14 |
 
 ---
 
@@ -605,7 +611,7 @@ Notificações, menções, níveis de confiança, denúncias, fila de moderaçã
 Documentação de instalação, guia de contribuição, tradução via `gettext`, exportação e importação de dados, tema customizável, testes de carga.
 
 **Fase 5 — Multi-região** *(última prioridade)*
-Roteador de banco leitura/escrita, middleware de fixação no primário, Patroni + etcd, réplica na segunda região, Garage distribuído, ensaio de failover documentado, painel de atraso de replicação.
+Roteador de banco leitura/escrita, middleware de fixação no primário, réplica de leitura em segunda região (configuração do provedor), Garage distribuído, ensaio de failover documentado, painel de atraso de replicação.
 
 ### Por que multi-região vem por último
 
@@ -614,7 +620,7 @@ Fases 1 a 4 entregam um fórum completo, público e mantível — em **uma regi�
 - Replicação sobre um schema que ainda muda toda semana multiplica o custo de cada migração.
 - A escala alvo (§1) cabe com folga num único Postgres. A segunda região resolve **falha de região**, não capacidade.
 - Uma instância única bem operada — backup testado com PITR (§9.1), monitoramento, restauração ensaiada — já cobre a maioria esmagadora dos incidentes reais. Backup ruim derruba fóruns com muito mais frequência que região inteira caindo.
-- Cada peça da Fase 5 (Patroni, etcd, réplicas, quorum) é dívida operacional permanente. Adiar é adiar custo real, não preguiça.
+- Cada peça da Fase 5 (réplicas, roteamento, fixação no primário) é dívida operacional e de código permanente. Adiar é adiar custo real, não preguiça.
 
 **Disponibilidade antes da Fase 5** vem de fundamentos, não de geografia: processos Django redundantes atrás do proxy, backup com PITR verificado mensalmente, monitoramento com alerta, migrações retrocompatíveis, deploy sem downtime.
 
@@ -643,9 +649,107 @@ Fases 1 a 4 entregam um fórum completo, público e mantível — em **uma regi�
 
 ## 13. Pontos ainda em aberto
 
-1. **Hospedagem da instância única.** VPS auto-gerido (custo baixo, operação toda por conta) ou Postgres gerenciado (backup e failover deixam de ser problema, custo sobe, dependência de fornecedor). Decisão necessária já na Fase 0 — é o que define a qualidade da disponibilidade até a Fase 5.
+1. ~~**Hospedagem da instância única.**~~ **Resolvido: PostgreSQL gerenciado.** Ver §14.
 2. **Regiões concretas.** Adiado para a Fase 5, não bloqueia nada agora. Quando chegar a hora: se o público for majoritariamente brasileiro, duas regiões no Brasil mais uma na Europa (comunidade lusófona) faz mais sentido que dispersão global. Não bloqueia nada agora.
 3. **Anônimos podem ler tudo?** Assumido que sim. Se houver áreas restritas, o cache de página da §8 precisa de outro desenho.
 4. **Idiomas do conteúdo além do português.** Assumido: interface e discussão em português, com termos e citações em Pāli, sânscrito, tibetano e chinês dentro do texto. Confirmar.
 5. **Migração de conteúdo existente.** Há acervo a importar de algum fórum atual? Muda a prioridade de ferramentas de importação.
 6. **Federação, no futuro.** Descartada agora. Se um dia entrar, ActivityPub sobre este schema é viável — mas seria uma decisão de arquitetura nova, não uma extensão.
+
+---
+
+## 14. Hospedagem: PostgreSQL gerenciado
+
+**Decisão tomada.** O banco roda em serviço gerenciado, não em VPS auto-gerido.
+
+### Por quê
+
+A §12 identifica o risco dominante do projeto até a Fase 5: **instância única cair sem backup bom**. Enquanto não houver segunda região, o backup é a única cópia dos dados.
+
+Esse risco é operacional, não técnico — e projeto open source mantido por voluntários é justamente onde trabalho operacional recorrente falha. Backup exige atenção contínua: verificar que rodou, verificar que restaura, verificar depois de cada mudança de schema. É o tipo de tarefa que ninguém percebe estar abandonada até o dia em que importa.
+
+Gerenciado transfere PITR, failover e retenção para quem tem plantão. O custo é dinheiro, que dá para orçar; a alternativa custa vigilância, que não dá.
+
+**Consequência direta:** **Patroni e etcd saem do escopo.** As menções na §3.4 e na §11 (Fase 5) passam a descrever o que o provedor faz, não o que operamos.
+
+### O que isto NÃO resolve
+
+> **A responsabilidade pelo backup não desaparece — muda de forma.** O provedor garante que o backup existe; ninguém além de nós garante que ele **restaura o nosso schema**. Um backup nunca restaurado deve ser tratado como inexistente, seja ele gerenciado ou não.
+
+Continuam sendo nossos:
+
+- **Ensaio de restauração mensal**, em instância descartável, com verificação de que os triggers da migração 0002 e as extensões voltaram funcionando. Automatizado, não manual.
+- **Cópia fria em provedor distinto.** Conta suspensa, erro de faturamento ou exclusão acidental do projeto levam junto os backups que moram lá dentro. `pg_dump` periódico para o Garage (ou qualquer S3 fora do provedor do banco).
+- **Retenção do WAL** suficiente para PITR cobrir o intervalo entre a hora em que um erro acontece e a hora em que alguém percebe. Num fórum, isso pode ser dias, não horas.
+
+### Requisitos que o provedor precisa atender
+
+O primeiro item é eliminatório e é o menos comum de ser oferecido.
+
+#### 1. Collation ICU na criação do banco — eliminatório
+
+A §6.1 exige `LOCALE_PROVIDER icu` com `ICU_LOCALE 'pt-BR'`. Isso só pode ser definido **na criação** do banco. Provedor que não permita passar esses parâmetros nos entrega um banco com collation `libc`, e a decisão fica travada para sempre — mudar depois exige recriar e reindexar tudo.
+
+Muito provedor gerenciado expõe apenas "crie um banco com este nome", sem controle sobre `CREATE DATABASE`. Verifique antes de assinar, num período de avaliação:
+
+```sql
+-- Precisa executar sem erro:
+CREATE DATABASE teste_icu
+  ENCODING 'UTF8'
+  LOCALE_PROVIDER icu
+  ICU_LOCALE 'pt-BR'
+  LOCALE 'C'
+  TEMPLATE template0;
+
+-- E depois, conectado a teste_icu, precisa devolver 'icu' e 'pt-BR':
+SELECT datlocprovider, daticulocale FROM pg_database WHERE datname = 'teste_icu';
+
+-- Prova prática de que a ordenação é a do português:
+SELECT * FROM (VALUES ('Azul'),('Ávila'),('Amora')) t(x) ORDER BY x;
+-- Correto:   Amora, Ávila, Azul
+-- Com libc:  Amora, Azul, Ávila   ← rejeite o provedor
+```
+
+#### 2. Extensões `unaccent` e `pg_trgm`
+
+Necessárias para a busca (§5). Ambas são **trusted** no PostgreSQL 13+, então o dono do banco pode instalá-las sem superusuário — o que normalmente resolve, já que serviço gerenciado nunca dá superusuário. Confirme mesmo assim: alguns provedores mantêm uma allowlist própria, mais restritiva que a do PostgreSQL.
+
+```sql
+CREATE EXTENSION IF NOT EXISTS unaccent;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+```
+
+#### 3. PostgreSQL 16 ou superior
+
+Por causa da maturidade do suporte a ICU. A migração 0001 não usa recurso exclusivo de versão nova, mas não vale economizar aqui.
+
+#### 4. Triggers e funções PL/pgSQL
+
+A migração 0002 cria duas funções e dois triggers. Não exigem privilégio especial e funcionam em qualquer PostgreSQL gerenciado — mas serviços "PostgreSQL-compatível" que não são PostgreSQL de verdade podem falhar. Rode `make migrate` contra a avaliação antes de decidir.
+
+#### 5. Pooler de conexões
+
+Serviço gerenciado costuma ter limite de conexões bem menor que um Postgres próprio. Se o provedor oferecer pooler (PgBouncer ou equivalente):
+
+> **Cuidado.** Pooler em modo *transaction* quebra cursores do lado do servidor e prepared statements. Com PgBouncer nesse modo é obrigatório configurar no Django:
+> ```python
+> DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
+> ```
+> Sem isso, consultas grandes falham de forma intermitente e difícil de diagnosticar — o erro aparece longe da causa.
+
+Com pooler externo, `CONN_MAX_AGE` deve ir para `0`; o pool passa a ser dele, não do Django.
+
+#### 6. Saída sem sequestro
+
+Projeto AGPL precisa ser instalável por qualquer pessoa. Nada de extensão proprietária, nada de recurso exclusivo do provedor no schema. O que roda em gerenciado tem que rodar igual no `docker compose` do repositório — que continua sendo o ambiente de desenvolvimento e a referência de portabilidade.
+
+Um `pg_dump` restaurável em PostgreSQL padrão é o teste: se não restaura, há dependência de fornecedor escondida.
+
+### Efeito no roadmap
+
+- **Fase 0–4:** banco gerenciado, uma região. Nada de Patroni.
+- **Fase 5:** o multi-região passa a ser configuração do provedor (réplica de leitura em outra região) em vez de cluster próprio. Continua sendo necessário o roteador de leitura/escrita do Django e o middleware de fixação no primário (§3.2, §3.3) — esses são da aplicação, e nenhum provedor resolve por nós.
+
+### Desenvolvimento continua em Docker
+
+Nada disto muda o ambiente local. O `docker-compose.yml` do repositório sobe PostgreSQL 16 com a mesma collation ICU e é onde os testes rodam, inclusive no CI. Gerenciado é decisão de produção; a paridade de collation entre local, CI e produção é o que impede que um bug de ordenação apareça só depois do deploy.

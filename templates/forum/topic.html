@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ topic.title }} — Buddhadharma{% endblock %}
+
+{% block content %}
+<nav class="trilha">
+  <a href="{% url 'forum:index' %}">{% translate "Início" %}</a> ›
+  <a href="{{ topic.category.get_absolute_url }}">{{ topic.category.name }}</a>
+</nav>
+
+<h1>{{ topic.title }}</h1>
+
+<ol class="posts">
+  {% for post in posts %}
+    <li class="post" id="post-{{ post.position }}">
+      <header>
+        <a href="{% url 'accounts:profile' post.author.username %}">{{ post.author.display_name }}</a>
+        <a class="permalink" href="#post-{{ post.position }}">#{{ post.position }}</a>
+        <time datetime="{{ post.created_at|date:'c' }}">{{ post.created_at|timesince }}</time>
+        {% if post.edited_at %}
+          <span class="editado" title="{{ post.edited_at|date:'c' }}">
+            {% blocktranslate count n=post.edit_count %}editado{% plural %}editado {{ n }} vezes{% endblocktranslate %}
+          </span>
+        {% endif %}
+      </header>
+
+      {% if post.reply_to %}
+        <p class="respondendo">
+          {% blocktranslate with autor=post.reply_to.author.display_name numero=post.reply_to.position %}
+            em resposta a {{ autor }} (#{{ numero }})
+          {% endblocktranslate %}
+        </p>
+      {% endif %}
+
+      {# body_html já passou por markdown-it (html=False) e nh3 com allowlist. #}
+      {# É o único ponto do projeto onde `safe` é aplicado a conteúdo de       #}
+      {# usuário, e só porque a sanitização acontece antes de gravar (§7.1).   #}
+      <div class="corpo">{{ post.html|safe }}</div>
+
+      {% if post.reaction_counts.all %}
+        <ul class="reacoes">
+          {% for rc in post.reaction_counts.all %}
+            <li>{{ rc.emoji.character }} {{ rc.count }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </li>
+  {% endfor %}
+</ol>
+
+{% if next_cursor %}
+  <a class="mais" href="?depois={{ next_cursor }}">{% translate "Mais respostas" %}</a>
+{% endif %}
+
+{% if form and not topic.is_locked %}
+  <form class="responder" method="post" action="{% url 'forum:post_create' topic.pk %}">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">{% translate "Responder" %}</button>
+  </form>
+{% elif topic.is_locked %}
+  <p class="aviso">{% translate "Tópico trancado." %}</p>
+{% elif not user.is_authenticated %}
+  <p class="aviso">
+    <a href="{% url 'accounts:login' %}">{% translate "Entre" %}</a>
+    {% translate "para responder." %}
+  </p>
+{% endif %}
+{% endblock %}

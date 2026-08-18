@@ -1,0 +1,82 @@
+[project]
+name = "buddhadharma"
+version = "0.1.0"
+description = "Fórum web sobre Budismo, em português — open source"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "AGPL-3.0-or-later" }
+
+dependencies = [
+    "django>=5.2,<6.0",
+    "psycopg[binary]>=3.2",
+    "markdown-it-py>=3.0",
+    "mdit-py-plugins>=0.4",
+    "nh3>=0.2.18",
+    "argon2-cffi>=23.1",
+    "pygments>=2.18",
+    "django-redis>=5.4",
+    "pillow>=11.0",
+    "python-dotenv>=1.0",
+    "linkify-it-py>=2.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "django-stubs[compatible-mypy]>=5.1",
+    "pytest>=8.3",
+    "pytest-django>=4.9",
+    "pytest-cov>=6.0",
+    "model-bakery>=1.20",
+    "types-pygments>=2.20.0.20260728",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",
+    "I",
+    "UP",
+    "B",
+    "DJ",
+    "S",
+    "C4", "SIM", "RUF",
+]
+ignore = [
+    "S101",
+    "RUF012",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"config/settings/*" = ["F403", "F405"]
+"*/tests/*" = ["S105", "S106"]
+# RUF001/2/3 avisam sobre caracteres Unicode ambíguos — cirílico que parece
+# latino. É exatamente o assunto destes dois arquivos: um implementa a defesa
+# contra homóglifos, o outro testa com os caracteres reais do ataque. Sem
+# essa exceção, o lint proíbe justamente o que precisa estar ali.
+"apps/accounts/validators.py" = ["RUF001", "RUF002", "RUF003"]
+"apps/accounts/tests/test_validators.py" = ["RUF001", "RUF002", "RUF003"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["mypy_django_plugin.main"]
+exclude = ["migrations/"]
+
+[[tool.mypy.overrides]]
+module = ["nh3.*"]
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "config.settings.dev"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.dev"
+python_files = ["test_*.py"]
+addopts = "--reuse-db --strict-markers"
+testpaths = ["apps"]

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Criar conta" %} — Buddhadharma{% endblock %}
+
+{% block content %}
+<h1>{% translate "Criar conta" %}</h1>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">{% translate "Criar conta" %}</button>
+</form>
+{% endblock %}

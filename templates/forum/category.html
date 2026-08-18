@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ category.name }} — Buddhadharma{% endblock %}
+
+{% block content %}
+<h1>{{ category.name }}</h1>
+{% if category.description %}<p class="descricao">{{ category.description }}</p>{% endif %}
+
+{% if user.is_authenticated and not category.is_locked or user.is_moderator %}
+  <a class="botao" href="{% url 'forum:topic_create' category.slug %}">
+    {% translate "Novo tópico" %}
+  </a>
+{% endif %}
+
+<ul class="topicos">
+  {% for topic in topics %}
+    <li{% if topic.is_pinned %} class="fixado"{% endif %}>
+      <a href="{{ topic.get_absolute_url }}">
+        {% if topic.is_pinned %}<span title="{% translate 'Fixado' %}">📌</span>{% endif %}
+        {% if topic.is_locked %}<span title="{% translate 'Trancado' %}">🔒</span>{% endif %}
+        {{ topic.title }}
+      </a>
+      <span class="meta">
+        {{ topic.author.display_name }} ·
+        {% blocktranslate count n=topic.post_count %}{{ n }} resposta{% plural %}{{ n }} respostas{% endblocktranslate %} ·
+        {{ topic.last_post_at|timesince }}
+      </span>
+    </li>
+  {% empty %}
+    <li class="vazio">{% translate "Nenhum tópico nesta categoria ainda." %}</li>
+  {% endfor %}
+</ul>
+
+{# Paginação por keyset: o cursor é o timestamp do último item, não o número #}
+{# da página. Custo constante em qualquer profundidade (§4.8).               #}
+{% if next_cursor %}
+  <a class="mais" href="?antes={{ next_cursor|urlencode }}">{% translate "Mais tópicos" %}</a>
+{% endif %}
+{% endblock %}

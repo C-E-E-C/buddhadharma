@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Novo tópico" %} — {{ category.name }}{% endblock %}
+
+{% block content %}
+<h1>{% blocktranslate with nome=category.name %}Novo tópico em {{ nome }}{% endblocktranslate %}</h1>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <p class="ajuda">{% translate "A mensagem aceita Markdown: **negrito**, *itálico*, > citação, `código`." %}</p>
+  <button type="submit">{% translate "Publicar" %}</button>
+</form>
+{% endblock %}

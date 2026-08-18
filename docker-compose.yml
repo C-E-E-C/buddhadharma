@@ -1,0 +1,45 @@
+name: buddhadharma
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: buddhadharma
+      POSTGRES_USER: buddhadharma
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev-only-nao-use-em-producao}
+      # Collation ICU — decisão de arquitetura §6.1.
+      # ICU e não libc: a ordenação libc depende do locale do sistema operacional,
+      # e diverge entre máquinas com versões diferentes de glibc. Numa réplica isso
+      # corrompe índices em silêncio. ICU é determinística entre máquinas.
+      # Precisa estar certo na criação do cluster — mudar depois exige reindexar tudo.
+      POSTGRES_INITDB_ARGS: >-
+        --encoding=UTF8
+        --locale-provider=icu
+        --icu-locale=pt-BR
+        --lc-collate=C
+        --lc-ctype=C
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U buddhadharma -d buddhadharma"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --save "" --appendonly no
+    # Sem persistência de propósito: o Redis guarda apenas cache e contadores
+    # de rate limit. Nada aqui é fonte de verdade (§3.5).
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

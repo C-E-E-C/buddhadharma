@@ -1,0 +1,121 @@
+/* Estilo mínimo da Fase 1. Tema customizável fica para a Fase 4. */
+
+:root {
+  --tinta: #2b2622;
+  --papel: #faf8f5;
+  --acafrao: #8b6f47;
+  --borda: #e3ddd4;
+  --suave: #6f665c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tinta: #e8e3dc;
+    --papel: #1a1816;
+    --acafrao: #c9a227;
+    --borda: #38332e;
+    --suave: #9c9288;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+main { max-width: 52rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+a { color: var(--acafrao); }
+
+.topo {
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  max-width: 52rem; margin: 0 auto; padding: 1rem;
+  border-bottom: 1px solid var(--borda);
+}
+.topo .marca { font-weight: 700; font-size: 1.15rem; text-decoration: none; }
+.topo nav { display: flex; gap: 1rem; align-items: center; }
+.inline { display: inline; }
+button.link {
+  background: none; border: none; padding: 0; cursor: pointer;
+  color: var(--acafrao); font: inherit; text-decoration: underline;
+}
+
+h1 { font-size: 1.6rem; line-height: 1.25; }
+h2 { font-size: 1.25rem; margin-top: 2.5rem; }
+
+.categorias, .topicos, .posts, .subcategorias, .reacoes, .mensagens {
+  list-style: none; padding: 0;
+}
+
+.categorias > li { margin-bottom: .75rem; }
+.categorias > li > a {
+  display: block; padding: .85rem 1rem; text-decoration: none; color: inherit;
+  border: 1px solid var(--borda); border-left-width: 4px; border-radius: 4px;
+}
+.categorias > li > a:hover { border-color: var(--acafrao); }
+.categorias strong { display: block; }
+
+.topicos li {
+  padding: .6rem 0; border-bottom: 1px solid var(--borda);
+}
+.topicos li.fixado { background: color-mix(in srgb, var(--acafrao) 6%, transparent); }
+
+.meta, .descricao, .contagem, .ajuda { color: var(--suave); font-size: .875rem; }
+.meta { display: block; }
+
+.trilha { font-size: .875rem; margin-bottom: .5rem; }
+
+.post { padding: 1rem 0; border-bottom: 1px solid var(--borda); }
+.post > header {
+  display: flex; gap: .75rem; align-items: baseline;
+  font-size: .875rem; color: var(--suave); margin-bottom: .5rem;
+}
+.post > header a:first-child { font-weight: 600; }
+.permalink { text-decoration: none; }
+.respondendo { font-size: .875rem; color: var(--suave); margin: 0 0 .5rem; }
+
+.corpo :is(p, ul, ol, blockquote, pre, table) { margin: .75rem 0; }
+.corpo blockquote {
+  margin-left: 0; padding: .25rem 0 .25rem 1rem;
+  border-left: 3px solid var(--borda); color: var(--suave);
+}
+.corpo pre {
+  padding: .8rem; overflow-x: auto; border-radius: 4px;
+  background: color-mix(in srgb, var(--tinta) 8%, transparent);
+}
+.corpo code { font-size: .9em; }
+.corpo img { max-width: 100%; height: auto; }
+.corpo table { border-collapse: collapse; width: 100%; }
+.corpo :is(th, td) { border: 1px solid var(--borda); padding: .4rem .6rem; }
+
+.reacoes { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .6rem; }
+.reacoes li {
+  padding: .15rem .5rem; border: 1px solid var(--borda); border-radius: 999px;
+  font-size: .875rem;
+}
+
+form p { margin: .75rem 0; }
+label { display: block; font-weight: 600; font-size: .9rem; }
+input, textarea, select {
+  width: 100%; padding: .5rem; font: inherit;
+  border: 1px solid var(--borda); border-radius: 4px;
+  background: var(--papel); color: var(--tinta);
+}
+button[type="submit"], .botao {
+  display: inline-block; padding: .5rem 1rem; font: inherit; cursor: pointer;
+  background: var(--acafrao); color: var(--papel);
+  border: none; border-radius: 4px; text-decoration: none;
+}
+
+.errorlist { color: #b3261e; font-size: .875rem; padding-left: 1rem; }
+.aviso, .vazio { color: var(--suave); font-style: italic; }
+.mais { display: inline-block; margin-top: 1rem; }
+
+footer {
+  max-width: 52rem; margin: 0 auto; padding: 2rem 1rem;
+  border-top: 1px solid var(--borda); color: var(--suave); font-size: .875rem;
+}

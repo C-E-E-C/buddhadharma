@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ profile_user.display_name }} — Buddhadharma{% endblock %}
+
+{% block content %}
+<h1>{{ profile_user.display_name }}</h1>
+{# username é o identificador; display_name acima é só apresentação (§6.3). #}
+<p class="meta">
+  @{{ profile_user.username }} ·
+  {{ profile_user.get_trust_level_display }} ·
+  {% blocktranslate count n=profile_user.post_count %}{{ n }} post{% plural %}{{ n }} posts{% endblocktranslate %} ·
+  {% blocktranslate with quando=profile_user.created_at|date:"F Y" %}desde {{ quando }}{% endblocktranslate %}
+</p>
+
+{% if profile_user.bio %}<div class="bio">{{ profile_user.bio|linebreaks }}</div>{% endif %}
+
+<h2>{% translate "Posts recentes" %}</h2>
+<ul class="topicos">
+  {% for post in recent_posts %}
+    <li>
+      <a href="{{ post.get_absolute_url }}">{{ post.topic.title }}</a>
+      <span class="meta">{{ post.created_at|timesince }}</span>
+    </li>
+  {% empty %}
+    <li class="vazio">{% translate "Nenhum post ainda." %}</li>
+  {% endfor %}
+</ul>
+{% endblock %}

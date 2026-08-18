@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Entrar" %} — Buddhadharma{% endblock %}
+
+{% block content %}
+<h1>{% translate "Entrar" %}</h1>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">{% translate "Entrar" %}</button>
+</form>
+<p><a href="{% url 'accounts:register' %}">{% translate "Ainda não tenho conta" %}</a></p>
+{% endblock %}

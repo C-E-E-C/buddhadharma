@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: buddhadharma
+          POSTGRES_USER: buddhadharma
+          POSTGRES_PASSWORD: postgres
+          # Mesma collation ICU do docker-compose. Se o CI rodasse com libc e
+          # a produção com ICU, a suíte validaria uma ordenação que não é a
+          # de produção — §6.1.
+          POSTGRES_INITDB_ARGS: >-
+            --encoding=UTF8
+            --locale-provider=icu
+            --icu-locale=pt-BR
+            --lc-collate=C
+            --lc-ctype=C
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U buddhadharma"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+
+    env:
+      SECRET_KEY: chave-apenas-de-ci-nao-usada-em-producao
+      DATABASE_URL: postgres://buddhadharma:postgres@127.0.0.1:5432/buddhadharma
+      REDIS_URL: redis://127.0.0.1:6379/0
+      DJANGO_SETTINGS_MODULE: config.settings.test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - run: uv sync --frozen
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Formatação
+        run: uv run ruff format --check .
+
+      - name: Checagem do Django
+        run: uv run python manage.py check --deploy --settings=config.settings.prod
+        env:
+          ALLOWED_HOSTS: exemplo.org
+
+      - name: Migração faltando
+        # Modelo alterado sem migração correspondente quebra o deploy.
+        run: uv run python manage.py makemigrations --check --dry-run
+
+      - name: Testes
+        run: uv run pytest --cov=apps --cov-report=term-missing

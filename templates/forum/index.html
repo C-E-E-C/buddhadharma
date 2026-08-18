@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<h1>{% translate "Categorias" %}</h1>
+
+<ul class="categorias">
+  {% for category in categories %}
+    <li>
+      <a href="{{ category.get_absolute_url }}" style="border-left-color: {{ category.color }}">
+        <strong>{{ category.name }}</strong>
+        <span class="descricao">{{ category.description }}</span>
+        <span class="contagem">
+          {% blocktranslate count n=category.topic_count %}{{ n }} tópico{% plural %}{{ n }} tópicos{% endblocktranslate %}
+        </span>
+      </a>
+      {% if category.children.all %}
+        <ul class="subcategorias">
+          {% for child in category.children.all %}
+            <li><a href="{{ child.get_absolute_url }}">{{ child.name }}</a></li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </li>
+  {% empty %}
+    <li class="vazio">{% translate "Nenhuma categoria ainda. Crie a primeira pelo admin." %}</li>
+  {% endfor %}
+</ul>
+
+{% if recent_topics %}
+  <h2>{% translate "Discussões recentes" %}</h2>
+  <ul class="topicos">
+    {% for topic in recent_topics %}
+      <li>
+        <a href="{{ topic.get_absolute_url }}">{{ topic.title }}</a>
+        <span class="meta">
+          {{ topic.category.name }} · {{ topic.author.display_name }} ·
+          {{ topic.last_post_at|timesince }}
+        </span>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,46 @@
+{% load static i18n %}<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Buddhadharma{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/forum.css' %}">
+  {# HTMX entra na Fase 2, junto com as reações — é o primeiro recurso que   #}
+  {# realmente precisa de atualização parcial. Até lá a Fase 1 funciona com  #}
+  {# formulário e link comuns, e nenhum JavaScript.                          #}
+  {# Quando entrar: `make vendor-htmx`, servido pelo próprio site e nunca    #}
+  {# por CDN — sem terceiro capaz de injetar script, e a CSP dispensa host   #}
+  {# externo (§7.1).                                                         #}
+</head>
+<body>
+  <header class="topo">
+    <a class="marca" href="{% url 'forum:index' %}">Buddhadharma</a>
+    <nav>
+      {% if user.is_authenticated %}
+        <a href="{% url 'accounts:profile' user.username %}">{{ user.display_name }}</a>
+        <form method="post" action="{% url 'accounts:logout' %}" class="inline">
+          {% csrf_token %}<button type="submit" class="link">{% translate "Sair" %}</button>
+        </form>
+      {% else %}
+        <a href="{% url 'accounts:login' %}">{% translate "Entrar" %}</a>
+        <a href="{% url 'accounts:register' %}">{% translate "Criar conta" %}</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  {% if messages %}
+    <ul class="mensagens">
+      {% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+
+  <main>{% block content %}{% endblock %}</main>
+
+  <footer>
+    <p>
+      Buddhadharma — software livre sob
+      <a href="https://www.gnu.org/licenses/agpl-3.0.html" rel="noopener">AGPL-3.0</a>.
+    </p>
+  </footer>
+</body>
+</html>

@@ -88,10 +88,11 @@ Estão todas documentadas, mas vale o aviso antes de alguém "consertar":
 
 Projeto comunitário. Comece por:
 
-1. **[docs/ROADMAP.md](docs/ROADMAP.md)** — o que está pronto, o que falta, boas primeiras tarefas
-2. **[docs/ARQUITETURA.md](docs/ARQUITETURA.md)** — decisões técnicas e o porquê de cada uma
-3. **[docs/DESIGN.md](docs/DESIGN.md)** — paleta, temas e critérios de usabilidade
-4. **[CONTRIBUTING.md](CONTRIBUTING.md)** — fluxo, padrões e regras de migração
+1. **[docs/ROADMAP.md](docs/ROADMAP.md)** — o que está pronto, o que falta
+2. **[docs/TAREFAS.md](docs/TAREFAS.md)** — tarefas prontas para pegar, com critérios de aceite
+3. **[docs/ARQUITETURA.md](docs/ARQUITETURA.md)** — decisões técnicas e o porquê de cada uma
+4. **[docs/DESIGN.md](docs/DESIGN.md)** — paleta, temas e critérios de usabilidade
+5. **[CONTRIBUTING.md](CONTRIBUTING.md)** — fluxo, padrões e regras de migração
 
 O roadmap tem uma seção de **Armadilhas**: mudanças que parecem melhorias e quebram o projeto em silêncio. Vale a leitura antes do primeiro pull request.
 

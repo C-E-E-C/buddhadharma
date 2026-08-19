@@ -6,6 +6,7 @@ Este documento diz **onde o projeto está** e **o que vem a seguir**. É o ponto
 
 - Decisões técnicas e o porquê de cada uma: [ARQUITETURA.md](ARQUITETURA.md)
 - Direção visual, paleta e usabilidade: [DESIGN.md](DESIGN.md)
+- **Tarefas prontas para pegar: [TAREFAS.md](TAREFAS.md)**
 - Como contribuir na prática: [../CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ---

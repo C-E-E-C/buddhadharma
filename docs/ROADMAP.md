@@ -224,38 +224,6 @@ Discutido e descartado. Reabrir exige argumento novo, não preferência.
 
 ---
 
-## Armadilhas
-
-Coisas que parecem melhorias e quebram o projeto. Tudo aqui está marcado 🔒 acima.
-
-**Não troque a collation ICU por `libc`.** `libc` depende do locale do sistema operacional e diverge entre máquinas, corrompendo índices em silêncio. Definida na criação do cluster; mudar depois exige reindexar tudo.
-
-**Não remova a normalização NFC.** `não` tem duas codificações Unicode válidas, visualmente idênticas. Sem normalizar, busca, `UNIQUE` e deduplicação quebram de forma invisível.
-
-**Não libere Unicode no `username`.** `Аdmin` com А cirílico é indistinguível de `admin` e permite personificar moderadores. O nome livre é o `display_name`, que nunca decide autorização.
-
-**Não troque o trigger de contagem por um sinal do Django.** O trigger vale para todo caminho de escrita — importação em massa, `psql`, migração de dados. O sinal só vale para o ORM.
-
-**Não simplifique a busca para uma configuração só.** Já foi tentado e medido: `unaccent()` roda antes do stemmer e o desliga, fazendo singular e plural pararem de casar. Os números estão na [§5](ARQUITETURA.md#5-busca) e na migração `0003`. Pelo mesmo motivo, o recuo por trigrama usa `%>` e não `%`.
-
-**Não use `OFFSET` para paginar.** `OFFSET 10000` varre e descarta dez mil linhas.
-
-**Não conte reações com `COUNT(*)` em tempo real.** Uma página com 20 posts e 6 emojis faria 120 agregações por requisição.
-
-**Não mova a sessão para o Redis.** O cookie assinado é o que a mantém válida em qualquer região sem replicar estado.
-
-**Não decida o tema no servidor.** O HTML precisa ser neutro em relação ao tema, com as cores vindo de custom properties e o `data-theme` escrito no cliente. Decidir no servidor triplica o cache de página da §8.
-
-**Não use `nonce` na CSP do script de tema.** Nonce precisa ser único por resposta, e página servida do cache carrega nonce velho que não bate com o cabeçalho. Use CSP por **hash** — o script é estático, o hash é estável.
-
-**Não distinga ação primária de destrutiva só pela cor.** Vermelho de marca e vermelho de perigo têm razão de luminância de 1.04:1 — são idênticos em brilho. A forma carrega a distinção: destrutivo é contorno com ícone, nunca preenchimento sólido.
-
-**Amarelo nunca é tinta sobre fundo claro.** 1.92:1, reprova até como borda. É cor de preenchimento, com rótulo escuro por cima.
-
-**Migrações precisam ser retrocompatíveis.** Durante o deploy, código antigo e novo rodam juntos. Use expand/contract.
-
----
-
 ## Decisões pendentes
 
 Precisam de resposta humana, não de código.

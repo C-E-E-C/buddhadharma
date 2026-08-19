@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.db import models, transaction
@@ -237,7 +238,12 @@ class Post(SoftDeleteModel, TimeStampedModel):
             post_count=models.F("post_count") + 1, last_post_at=post.created_at
         )
         Category.objects.filter(pk=locked.category_id).update(post_count=models.F("post_count") + 1)
-        type(author).objects.filter(pk=author.pk).update(post_count=models.F("post_count") + 1)
+
+        # get_user_model() e não type(author): numa view, `author` é o
+        # request.user, que é um SimpleLazyObject. Ele delega `__class__` ao
+        # objeto embrulhado — por isso `isinstance(author, User)` passa —, mas
+        # `type()` devolve a classe do proxy, que não tem `.objects`.
+        get_user_model().objects.filter(pk=author.pk).update(post_count=models.F("post_count") + 1)
         return post
 
 

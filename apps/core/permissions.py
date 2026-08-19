@@ -26,6 +26,15 @@ def require_user(user: User | AnonymousUser) -> User:
     O decorador garante em tempo de execução que há usuário autenticado, mas
     essa garantia não chega ao verificador de tipos. Esta função transporta a
     garantia, e falha alto caso o decorador seja removido por engano.
+
+    .. warning::
+       O objeto devolvido continua sendo o ``request.user``, que é um
+       ``SimpleLazyObject``. Ele delega ``__class__`` ao usuário embrulhado —
+       daí o ``isinstance`` acima passar — mas **``type()`` devolve a classe do
+       proxy**, sem ``.objects`` nem nada do modelo.
+
+       Nunca escreva ``type(user).objects``; use ``get_user_model()``. Já
+       causou um erro 500 ao publicar tópico.
     """
     if not isinstance(user, User):
         raise PermissionError("Esta operação exige usuário autenticado.")

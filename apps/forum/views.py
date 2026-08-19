@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.db.models import Prefetch
+from django.db.models import F, Prefetch
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.text import slugify
@@ -101,7 +101,11 @@ def topic(request: HttpRequest, pk: int, slug: str) -> HttpResponse:
     # Acumulado em cache e descarregado em lote — escrever uma linha por
     # visualização inundaria o WAL (§8). Por ora, incremento direto; a
     # agregação entra junto com o Redis de contadores.
-    Topic.all_objects.filter(pk=obj.pk).update(view_count=obj.view_count + 1)
+    #
+    # F() e não `obj.view_count + 1`: a segunda forma lê em Python e grava o
+    # valor calculado, então dois acessos simultâneos leem o mesmo número e
+    # uma das visitas se perde. F() deixa a soma no banco.
+    Topic.all_objects.filter(pk=obj.pk).update(view_count=F("view_count") + 1)
 
     return render(
         request,
@@ -133,7 +137,7 @@ def topic_create(request: HttpRequest, slug: str) -> HttpResponse:
             slug=slugify(form.cleaned_data["title"])[:220] or "topico",
         )
         Post.create_in_topic(new_topic, autor, form.cleaned_data["body_md"])
-        Category.objects.filter(pk=cat.pk).update(topic_count=cat.topic_count + 1)
+        Category.objects.filter(pk=cat.pk).update(topic_count=F("topic_count") + 1)
         return redirect(new_topic.get_absolute_url())
 
     return render(request, "forum/topic_form.html", {"category": cat, "form": form})

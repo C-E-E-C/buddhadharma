@@ -23,11 +23,11 @@ Cada tarefa segue a mesma estrutura, na mesma ordem:
 | **Como implementar** | Abordagem sugerida, com esboço de código onde a forma importa |
 | **Pontos de partida** | Arquivos e símbolos que já existem no código |
 | **Método de teste** | O que verificar e onde escrever o teste |
-| **Cuidados** | Armadilha específica desta tarefa — só quando há uma |
+| **Cuidados** | O que costuma dar errado nesta tarefa — só quando há algo |
 
 **Tamanho** estima esforço, não dificuldade: `P` até meio dia, `M` um a dois dias, `G` mais que isso.
 
-**Antes de começar:** comente na issue que vai pegar. Leia as [Armadilhas](ROADMAP.md#armadilhas) — várias tarefas encostam em decisões travadas.
+**Antes de começar:** comente na issue que vai pegar. Leia a seção **Cuidados** da tarefa e as [decisões registradas](ARQUITETURA.md#10-decisões-registradas) — várias tarefas encostam em escolhas já fechadas.
 
 **Para terminar:** `make check` precisa passar. Toda tarefa que muda comportamento leva teste junto.
 
@@ -881,7 +881,7 @@ Em `apps/forum/tests/test_views.py`:
 
 #### Cuidados
 
-> **Consultar só uma das duas configurações perde metade dos resultados, em silêncio.** `search_posts()` já cuida disso. A tentação de "simplificar" a consulta é exatamente a armadilha registrada.
+> **Consultar só uma das duas configurações perde metade dos resultados, em silêncio.** `search_posts()` já cuida disso. A tentação de "simplificar" a consulta é exatamente o que a migração `0003` documenta ter falhado.
 
 ---
 

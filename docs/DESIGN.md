@@ -43,7 +43,7 @@ Contrastes calculados pela fórmula da WCAG 2.2. Limiares: **4.5:1** para texto 
 
 **Amarelo nunca é tinta.** O passo 400 dá 1.92:1 sobre fundo claro — reprova até como borda. Mas como **preenchimento com rótulo escuro** ele é excelente: `#1C1714` sobre `#EFA92B` dá **8.78:1**. O papel do amarelo é superfície, não texto.
 
-**Laranja 500 tem uma armadilha.** Dá 2.97:1 sobre fundo claro — falha o limiar de 3:1 por três centésimos. Não serve como ícone nem borda no tema claro. E branco sobre laranja 500 dá só 3.13:1, insuficiente para rótulo de botão. Botão sólido no tema claro usa 600 ou mais escuro com texto branco (`#FFFFFF` sobre 600 = 4.59:1), ou 400/500 com texto escuro.
+**Laranja 500 engana.** Dá 2.97:1 sobre fundo claro — falha o limiar de 3:1 por três centésimos. Não serve como ícone nem borda no tema claro. E branco sobre laranja 500 dá só 3.13:1, insuficiente para rótulo de botão. Botão sólido no tema claro usa 600 ou mais escuro com texto branco (`#FFFFFF` sobre 600 = 4.59:1), ou 400/500 com texto escuro.
 
 ---
 

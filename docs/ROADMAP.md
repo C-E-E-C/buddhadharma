@@ -18,7 +18,7 @@ Este documento diz **onde o projeto está** e **o que vem a seguir**. É o ponto
 | ✅ | Pronto e verificado |
 | 🟡 | **Parcial** — existe no banco, falta a interface ou o caminho de escrita |
 | ⬜ | Não começou |
-| 🔒 | Decisão travada. Ver [Armadilhas](#armadilhas) antes de mexer |
+| 🔒 | Decisão travada — abra uma issue antes de mudar |
 
 O 🟡 é o estado mais importante deste documento. Várias coisas foram construídas **só na camada de dados**, de propósito: mudar schema depois que há conteúdo é caro, mudar interface não é. Quem pegar um item 🟡 encontra a fundação pronta e o trabalho concentrado na parte visível.
 
@@ -261,7 +261,7 @@ Ordem sugerida — cada uma é pequena, isolada e com a fundação já pronta:
 
 ### Antes de abrir um pull request
 
-- Leia a [§10](ARQUITETURA.md#10-decisões-registradas) (decisões registradas) e as [Armadilhas](#armadilhas) acima
+- Leia a [§10](ARQUITETURA.md#10-decisões-registradas) — decisões registradas, com o motivo de cada uma
 - Discorda de uma decisão travada? Abra uma issue **antes** de escrever código
 - Toda correção de bug começa por um teste que falha
 - Teste de segurança que falha aponta defeito no código, nunca no teste

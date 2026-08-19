@@ -94,8 +94,6 @@ Projeto comunitário. Comece por:
 4. **[docs/DESIGN.md](docs/DESIGN.md)** — paleta, temas e critérios de usabilidade
 5. **[CONTRIBUTING.md](CONTRIBUTING.md)** — fluxo, padrões e regras de migração
 
-O roadmap tem uma seção de **Armadilhas**: mudanças que parecem melhorias e quebram o projeto em silêncio. Vale a leitura antes do primeiro pull request.
-
 ## Licença
 
 AGPL-3.0-or-later. Fórum é software acessado pela rede: a AGPL garante que quem

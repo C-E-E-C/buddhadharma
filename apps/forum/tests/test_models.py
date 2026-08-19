@@ -9,6 +9,7 @@ from django.db import IntegrityError, connection
 
 from apps.accounts.models import User
 from apps.forum.models import Category, Emoji, Post, Reaction, ReactionCount, Topic
+from apps.forum.search import fuzzy_posts, search_posts
 
 pytestmark = pytest.mark.django_db
 
@@ -139,29 +140,96 @@ class TestTriggerDeReacoes:
 
 
 class TestBusca:
+    """Busca full-text — §5, com a correção medida na migração 0003.
+
+    O vetor combina duas configurações porque radical e acento são propriedades
+    conflitantes numa configuração só: `unaccent` roda antes do stemmer e o
+    desliga na prática. Ver a docstring da migração para os números.
+    """
+
     def test_vetor_e_preenchido_por_trigger(self, topico: Topic, autor: User) -> None:
         post = Post.create_in_topic(topico, autor, "A prática da meditação sentada.")
         post.refresh_from_db()
         assert post.search_vector is not None
 
-    def test_busca_ignora_acento(self, topico: Topic, autor: User) -> None:
-        """unaccent: quem digita `meditacao` precisa encontrar `meditação`."""
+    def test_acento_ignorado(self, topico: Topic, autor: User) -> None:
+        """Quem digita `meditacao` no celular precisa encontrar `meditação`."""
         Post.create_in_topic(topico, autor, "A prática da meditação sentada.")
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT count(*) FROM forum_post "
-                "WHERE search_vector @@ to_tsquery('portuguese', unaccent(%s))",
-                ["meditacao"],
-            )
-            assert cursor.fetchone()[0] == 1
+        assert search_posts("meditacao").count() == 1
 
-    def test_busca_encontra_radical(self, topico: Topic, autor: User) -> None:
-        """Stemmer português: `meditações` casa com `meditação`."""
+    def test_radical_com_acento(self, topico: Topic, autor: User) -> None:
+        """Consulta acentuada casa singular e plural — o stemmer funcionando.
+
+        Este é o teste que pegou o defeito da 0002: com `unaccent()` antes do
+        `to_tsvector`, `meditações` virava 'meditaco' e `meditação` virava
+        'meditaca', e os dois deixavam de casar.
+        """
         Post.create_in_topic(topico, autor, "Sobre as meditações do Buda.")
+        assert search_posts("meditação").count() == 1
+        assert search_posts("meditações").count() == 1
+
+    def test_diacritico_do_pali(self, topico: Topic, autor: User) -> None:
+        """Poucos digitam os diacríticos do Pāli. Os dois lados precisam achar."""
+        Post.create_in_topic(topico, autor, "Sobre anattā e a vida do saṅgha.")
+        assert search_posts("anatta").count() == 1
+        assert search_posts("anattā").count() == 1
+        assert search_posts("sangha").count() == 1
+        assert search_posts("saṅgha").count() == 1
+
+    def test_termo_ausente_nao_casa(self, topico: Topic, autor: User) -> None:
+        Post.create_in_topic(topico, autor, "A prática da meditação sentada.")
+        assert search_posts("nagarjuna").count() == 0
+
+    def test_entrada_com_sintaxe_quebrada_nao_levanta_erro(
+        self, topico: Topic, autor: User
+    ) -> None:
+        """`websearch` em vez de `to_tsquery`: entrada da web nunca é confiável
+        e `to_tsquery` levanta erro de sintaxe com caractere solto."""
+        Post.create_in_topic(topico, autor, "A prática da meditação sentada.")
+        for entrada in ["&&&", "( unbalanced", "a & | b", "!!!", ""]:
+            assert search_posts(entrada).count() >= 0
+
+    def test_limitacao_do_fulltext_sem_acento_e_outra_flexao(
+        self, topico: Topic, autor: User
+    ) -> None:
+        """Documenta o que o full-text NÃO faz, e quem cobre.
+
+        Consulta sem acento numa flexão diferente da do texto não casa por
+        full-text — é o resíduo do conflito entre acento e radical. O trigrama
+        cobre, e é para isso que existe o recuo em `search_posts`.
+
+        Se o primeiro assert algum dia começar a falhar, a limitação foi
+        resolvida e o teste deve ser reescrito, não apagado.
+        """
+        Post.create_in_topic(topico, autor, "Sobre as meditações do Buda.")
+
+        assert search_posts("meditacao").count() == 0
+        assert fuzzy_posts("meditacao").count() == 1
+        assert search_posts("meditacao", fuzzy_fallback=True).count() == 1
+
+    def test_trigrama_usa_operador_de_palavra_nao_de_frase(
+        self, topico: Topic, autor: User
+    ) -> None:
+        """`%` compara strings inteiras; `%>` compara com a melhor palavra.
+
+        Uma palavra contra um post de parágrafos dá similaridade baixíssima
+        pelo `%` e nunca casaria. Este teste trava a escolha do operador —
+        trocar `trigram_word_similar` por `trigram_similar` o derruba.
+        """
+        texto = "Sobre as meditações do Buda e o caminho que delas decorre."
+        Post.create_in_topic(topico, autor, texto)
+
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT count(*) FROM forum_post "
-                "WHERE search_vector @@ to_tsquery('portuguese', unaccent(%s))",
-                ["meditacao"],
+                "SELECT similarity(%s, %s), word_similarity(%s, %s)",
+                [texto, "meditacao", "meditacao", texto],
             )
-            assert cursor.fetchone()[0] == 1
+            frase, palavra = cursor.fetchone()
+
+        assert frase < 0.3, "premissa: similaridade de frase inteira fica sob o limiar"
+        assert palavra >= 0.3, "premissa: similaridade de palavra passa o limiar"
+        assert fuzzy_posts("meditacao").count() == 1
+
+    def test_trigrama_nao_casa_palavra_sem_relacao(self, topico: Topic, autor: User) -> None:
+        Post.create_in_topic(topico, autor, "Sobre as meditações do Buda.")
+        assert fuzzy_posts("nagarjuna").count() == 0

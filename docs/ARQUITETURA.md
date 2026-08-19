@@ -398,29 +398,85 @@ CREATE INDEX ON post USING GIN (body_md gin_trgm_ops);
 
 Full-text nativo do PostgreSQL. Nenhum serviço separado.
 
-```
-Post.search_vector    tsvector, coluna gerada ou mantida por trigger
-```
+### O que a versão 0.1 deste documento prescrevia — e por que estava errado
 
-Composição com pesos:
+A primeira versão desta seção mandava compor o vetor assim:
 
 ```sql
-setweight(to_tsvector('portuguese', unaccent(coalesce(titulo_do_topico,''))), 'A') ||
+-- ERRADO. Mantido aqui como registro.
 setweight(to_tsvector('portuguese', unaccent(coalesce(body_md,''))), 'B')
 ```
 
-- Configuração `portuguese` dá stemming: "meditação" e "meditações" casam; "praticar" e "prática" se aproximam.
-- Extensão `unaccent` torna a busca insensível a acento — o usuário digita "budismo" ou "meditacao" e encontra assim mesmo.
-- Índice GIN sobre `search_vector`.
+Parece razoável: stemming do português mais insensibilidade a acento. Está errado, e o erro é silencioso — a busca funciona, só devolve menos.
 
-**Escritas não-latinas.** Pāli, sânscrito em Devanágari, tibetano e CJK não têm stemmer no PostgreSQL. Degradam para correspondência de token exato, o que é aceitável — mas o índice `pg_trgm` sobre `body_md` cobre a lacuna, permitindo busca por substring e tolerância a erro de digitação nessas escritas. Termos em Pāli transliterado (`anicca`, `dukkha`, `anattā`) funcionam bem em ambos os índices.
+`unaccent()` roda **antes** do stemmer, e o stemmer snowball do português reconhece os sufixos pelos acentos. Sem eles, cai em regras genéricas. Medido no banco do projeto:
 
-**Diacríticos do Pāli.** `unaccent` remove mácrons e pontos subscritos: `anattā` indexa junto com `anatta`, `saṅgha` com `sangha`. É o comportamento certo — poucos digitam os diacríticos corretamente.
+| Entrada | `to_tsvector('portuguese', unaccent(x))` | `to_tsvector('portuguese', x)` |
+|---|---|---|
+| `meditações` | `meditaco` | `medit` |
+| `meditação` | `meditaca` | `medit` |
 
-**Rota de escalada, se necessária depois:** `pg_search`/ParadeDB, que traz ranking BM25 escrito em Rust como extensão do próprio PostgreSQL — sem serviço adicional para operar, sem sincronização de índice, sem novo ponto de falha. Elasticsearch fica descartado: triplica o custo operacional para ganho nulo nesta escala.
+Com `unaccent` na frente, **singular e plural param de casar**. O stemming, que era a razão de escolher a configuração `portuguese`, ficava desligado na prática.
 
-Busca lê da réplica local. Se ficar indisponível, a busca falha isoladamente e o resto do fórum continua.
+Trocar a chamada inline pela receita canônica — `unaccent` como dicionário na cadeia de uma configuração customizada — **não resolve**: a ordem continua sendo unaccent, depois stem. Também foi medido.
 
+### O que o projeto faz
+
+As duas propriedades são genuinamente conflitantes numa configuração só, e as duas importam. Então indexamos e consultamos **duas**:
+
+```sql
+to_tsvector('portuguese',  txt)  ||  to_tsvector('pt_unaccent', txt)
+```
+
+- `portuguese` — stemmer com acentos preservados. Faz `meditações` casar com `meditação`.
+- `pt_unaccent` — cópia da anterior com `unaccent` na cadeia de dicionários. Faz `meditacao` casar com `meditação`, e `anatta` com `anattā`.
+
+Criadas na migração `0003`, com o trigger que mantém o vetor. Índice GIN sobre `search_vector`.
+
+Comportamento medido:
+
+| Consulta | Encontra |
+|---|---|
+| `meditação` | `meditação` e `meditações` |
+| `meditações` | `meditação` e `meditações` |
+| `meditacao` | `meditação` |
+| `anatta` / `anattā` | `anattā` |
+| `sangha` / `saṅgha` | `saṅgha` |
+
+Custo: o vetor guarda os lexemas das duas configurações e fica maior. Troca aceita — espaço de índice é barato, busca que não encontra é cara.
+
+### O caso que sobra, e quem cobre
+
+Consulta **sem acento** numa **flexão diferente** da que está no texto — `meditacao` contra um post que só diz `meditações` — continua sem casar por full-text. É o resíduo do conflito.
+
+Cobre esse caso o índice trigrama sobre `body_md`, exposto em `apps/forum/search.py` como recuo explícito.
+
+> **Detalhe que inverte o resultado:** o operador precisa ser `%>` (`trigram_word_similar`), não `%` (`trigram_similar`). `%` compara as **strings inteiras**, então uma palavra contra um post de parágrafos dá similaridade baixíssima e nunca casa. Medido:
+>
+> ```
+> similarity('Sobre as meditações do Buda.', 'meditacao')       = 0.19   ← sob o limiar de 0.3
+> word_similarity('meditacao', 'Sobre as meditações do Buda.')  = 0.60   ← passa
+> ```
+>
+> `%>` compara o termo com a melhor palavra do texto. O índice GIN atende esse operador — verificado por `EXPLAIN`: Bitmap Index Scan, não varredura sequencial.
+
+O recuo fica **desligado por padrão**. Trigrama não tem noção de relevância; misturado ao resultado bom, adiciona ruído. Como último recurso antes de "nada encontrado", vale.
+
+### Escritas não-latinas
+
+Pāli, sânscrito em Devanágari, tibetano e CJK não têm stemmer no PostgreSQL. Degradam para correspondência de token exato, o que é aceitável — e o índice trigrama cobre a lacuna com busca aproximada.
+
+Para o Pāli, a configuração `pt_unaccent` remove mácrons e pontos subscritos: `anattā` indexa junto com `anatta`, `saṅgha` com `sangha`. É o comportamento certo, porque poucos digitam os diacríticos.
+
+### Entrada do usuário
+
+`websearch_to_tsquery`, nunca `to_tsquery`. Aceita a sintaxe que as pessoas conhecem de buscadores (aspas, `-palavra`, `or`) e **nunca levanta erro de sintaxe** com entrada digitada — `to_tsquery` levanta com um `&` solto, o que vira erro 500 vindo de uma caixa de busca pública.
+
+### Rota de escalada, se necessária depois
+
+`pg_search`/ParadeDB, que traz ranking BM25 escrito em Rust como extensão do próprio PostgreSQL — sem serviço adicional para operar, sem sincronização de índice, sem novo ponto de falha. Elasticsearch fica descartado: triplica o custo operacional para ganho nulo nesta escala.
+
+Busca lê da réplica local quando houver réplica. Se ficar indisponível, falha isoladamente e o resto do fórum continua.
 ---
 
 ## 6. Idioma, Unicode e collation
@@ -717,6 +773,14 @@ Necessárias para a busca (§5). Ambas são **trusted** no PostgreSQL 13+, entã
 ```sql
 CREATE EXTENSION IF NOT EXISTS unaccent;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
+```
+
+A migração `0003` também cria uma **configuração de busca** própria. Não exige privilégio especial — qualquer dono de banco cria a sua —, mas confirme junto com as extensões:
+
+```sql
+CREATE TEXT SEARCH CONFIGURATION pt_unaccent (COPY = portuguese);
+ALTER TEXT SEARCH CONFIGURATION pt_unaccent
+    ALTER MAPPING FOR hword, hword_part, word WITH unaccent, portuguese_stem;
 ```
 
 #### 3. PostgreSQL 16 ou superior

@@ -468,7 +468,7 @@ Nenhuma informação pode ser transmitida só por cor. Vale para categoria, tóp
 | Fase | 2.3 |
 | Tamanho | M |
 | Depende de | BD-016 |
-| Rótulos | `fase-2` `área:moderação` |
+| Rótulos | `fase-2` `área:moderação` `precisa-decisão` |
 
 **Critérios de aceite**
 - [ ] Ver as revisões de um post, com autor e data

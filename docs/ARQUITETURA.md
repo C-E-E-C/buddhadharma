@@ -651,6 +651,8 @@ Contadores agregados (`post_count`, `topic_count`, `view_count`, `ReactionCount`
 
 ## 11. Roadmap
 
+> **Estado atual vive em [ROADMAP.md](ROADMAP.md).** Esta seção define as fases e o raciocínio por trás da ordem; o que está pronto, parcial ou pendente é acompanhado lá, com granularidade de tarefa. Ao concluir algo, atualize o ROADMAP — não esta seção.
+
 **Fase 0 — Fundação**
 Projeto Django, Docker Compose (Postgres + Redis), CI, modelo `User` customizado desde o início (trocar depois é doloroso), configuração de collation e normalização, licença AGPL, `CONTRIBUTING.md`.
 

@@ -6,7 +6,8 @@ Categorias gerenciadas em banco, posts em Markdown, reações com emoji, víncul
 entre posts com backlinks, histórico de edição e busca full-text em português —
 aceitando Pāli, sânscrito, tibetano e chinês dentro do texto.
 
-**Estado: Fase 1.** Um fórum funcional em uma região. Ver [o roadmap](docs/ARQUITETURA.md#11-roadmap).
+**Estado: Fases 0 e 1 concluídas.** Um fórum funcional em uma região.
+O que vem a seguir e como pegar uma tarefa: **[docs/ROADMAP.md](docs/ROADMAP.md)**.
 
 ---
 
@@ -85,7 +86,13 @@ Estão todas documentadas, mas vale o aviso antes de alguém "consertar":
 
 ## Contribuir
 
-Ver [CONTRIBUTING.md](CONTRIBUTING.md).
+Projeto comunitário. Comece por:
+
+1. **[docs/ROADMAP.md](docs/ROADMAP.md)** — o que está pronto, o que falta, boas primeiras tarefas
+2. **[docs/ARQUITETURA.md](docs/ARQUITETURA.md)** — decisões técnicas e o porquê de cada uma
+3. **[CONTRIBUTING.md](CONTRIBUTING.md)** — fluxo, padrões e regras de migração
+
+O roadmap tem uma seção de **Armadilhas**: mudanças que parecem melhorias e quebram o projeto em silêncio. Vale a leitura antes do primeiro pull request.
 
 ## Licença
 

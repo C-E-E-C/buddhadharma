@@ -5,6 +5,7 @@ Fórum sobre Budismo, em português. Software livre sob AGPL-3.0.
 Este documento diz **onde o projeto está** e **o que vem a seguir**. É o ponto de partida para quem quer contribuir.
 
 - Decisões técnicas e o porquê de cada uma: [ARQUITETURA.md](ARQUITETURA.md)
+- Direção visual, paleta e usabilidade: [DESIGN.md](DESIGN.md)
 - Como contribuir na prática: [../CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ---
@@ -83,6 +84,19 @@ Concluída, com uma lacuna listada abaixo.
 ## Fase 2 — Riqueza de conteúdo 🟡
 
 **É aqui que o trabalho está agora.** Metade já existe no banco.
+
+### 2.0 Sistema de design ⬜ — *pré-requisito das demais*
+
+Paleta quente (amarelo, laranja, vermelho), tema claro e escuro alternáveis, interface moderna. A direção completa, com contrastes já calculados, está em [DESIGN.md](DESIGN.md).
+
+- [ ] Tokens de cor em custom properties, três estados de tema (claro, escuro, sistema)
+- [ ] Escala tipográfica e espaçamento
+- [ ] Alternador de tema — 🔒 sem quebrar o cache de página nem a CSP
+- [ ] Componentes base: botão (primário, secundário, destrutivo), etiqueta, campo, linha de listagem, aviso
+- [ ] Página de referência viva, com todos os componentes nos dois temas
+- [ ] `Category.color` migrado de hex livre para conjunto curado de tokens
+
+> **Vem antes de 2.1–2.6, não depois.** A Fase 2 constrói botão de reagir, busca, editor e edição. Se o sistema de design chegar depois, tudo isso é reestilizado; se chegar antes, cada tela nasce usando os mesmos componentes.
 
 ### 2.1 Reações com emoji 🟡
 
@@ -228,6 +242,14 @@ Coisas que parecem melhorias e quebram o projeto. Tudo aqui está marcado 🔒 a
 **Não conte reações com `COUNT(*)` em tempo real.** Uma página com 20 posts e 6 emojis faria 120 agregações por requisição.
 
 **Não mova a sessão para o Redis.** O cookie assinado é o que a mantém válida em qualquer região sem replicar estado.
+
+**Não decida o tema no servidor.** O HTML precisa ser neutro em relação ao tema, com as cores vindo de custom properties e o `data-theme` escrito no cliente. Decidir no servidor triplica o cache de página da §8.
+
+**Não use `nonce` na CSP do script de tema.** Nonce precisa ser único por resposta, e página servida do cache carrega nonce velho que não bate com o cabeçalho. Use CSP por **hash** — o script é estático, o hash é estável.
+
+**Não distinga ação primária de destrutiva só pela cor.** Vermelho de marca e vermelho de perigo têm razão de luminância de 1.04:1 — são idênticos em brilho. A forma carrega a distinção: destrutivo é contorno com ícone, nunca preenchimento sólido.
+
+**Amarelo nunca é tinta sobre fundo claro.** 1.92:1, reprova até como borda. É cor de preenchimento, com rótulo escuro por cima.
 
 **Migrações precisam ser retrocompatíveis.** Durante o deploy, código antigo e novo rodam juntos. Use expand/contract.
 

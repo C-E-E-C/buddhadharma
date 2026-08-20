@@ -25,6 +25,8 @@ Cada tarefa segue a mesma estrutura, na mesma ordem:
 | **Método de teste** | O que verificar e onde escrever o teste |
 | **Cuidados** | O que costuma dar errado nesta tarefa — só quando há algo |
 
+As issues no GitHub são geradas deste documento e trazem todas as seções **menos "Como implementar"**: a issue enuncia o problema e os critérios, e a abordagem fica a cargo de quem implementa. A sugestão continua aqui, para quem quiser um ponto de partida.
+
 **Tamanho** estima esforço, não dificuldade: `P` até meio dia, `M` um a dois dias, `G` mais que isso.
 
 **Antes de começar:** comente na issue que vai pegar. Leia a seção **Cuidados** da tarefa e as [decisões registradas](ARQUITETURA.md#10-decisões-registradas) — várias tarefas encostam em escolhas já fechadas.

@@ -25,7 +25,14 @@ Cada tarefa segue a mesma estrutura, na mesma ordem:
 | **Método de teste** | O que verificar e onde escrever o teste |
 | **Cuidados** | O que costuma dar errado nesta tarefa — só quando há algo |
 
-As issues no GitHub são geradas deste documento e trazem todas as seções **menos "Como implementar"**: a issue enuncia o problema e os critérios, e a abordagem fica a cargo de quem implementa. A sugestão continua aqui, para quem quiser um ponto de partida.
+As issues no GitHub são geradas deste documento. Nem tudo daqui vai para lá:
+
+| Fica só no documento | Por quê |
+|---|---|
+| **Como implementar** | A issue enuncia o problema e os critérios; a abordagem é de quem implementa |
+| **Tamanho** | Estimativa serve para planejar o conjunto, não para quem pega uma tarefa |
+
+> **Ao editar uma issue:** o corpo é reescrito quando as issues são regeradas deste documento. Mudança que precise durar vai aqui; discussão vai nos comentários, que a regeração não toca.
 
 **Tamanho** estima esforço, não dificuldade: `P` até meio dia, `M` um a dois dias, `G` mais que isso.
 

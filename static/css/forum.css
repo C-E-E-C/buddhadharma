@@ -35,9 +35,12 @@ button.link {
 h1 { font-size: var(--texto-ggg); line-height: var(--altura-titulo); }
 h2 { font-size: var(--texto-g); line-height: var(--altura-titulo); margin-top: var(--esp-6); }
 
-.categorias, .topicos, .posts, .subcategorias, .reacoes, .mensagens {
+.categorias, .topicos, .posts, .subcategorias, .reacoes, .mensagens, .resultados {
   list-style: none; padding: 0;
 }
+
+.resultados > li { padding: var(--esp-3) 0; border-bottom: 1px solid var(--borda); }
+.resultados .trecho { margin: var(--esp-2) 0 0; max-width: var(--medida); }
 
 .categorias > li { margin-bottom: .75rem; }
 .categorias > li > a {

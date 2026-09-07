@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Escolher senha nova" %} — Buddhadharma{% endblock %}
+
+{% block content %}
+{% if validlink %}
+  <h1>{% translate "Escolher senha nova" %}</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">{% translate "Salvar senha" %}</button>
+  </form>
+{% else %}
+  <h1>{% translate "Link inválido" %}</h1>
+  {# Mesma página para link expirado, já usado e adulterado: distinguir os #}
+  {# casos contaria ao atacante o que aconteceu com o token.               #}
+  <p>
+    {% translate "Este link não vale mais. Ele expira com o tempo e serve uma vez só — se já o usou, a senha nova está valendo." %}
+  </p>
+  <p><a href="{% url 'accounts:password_reset' %}">{% translate "Pedir um link novo" %}</a></p>
+{% endif %}
+{% endblock %}

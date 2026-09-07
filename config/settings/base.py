@@ -185,6 +185,28 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+# --------------------------------------------------------------------------
+# Recuperação de senha — §7.3
+# --------------------------------------------------------------------------
+
+# O padrão do Django é 3 dias. Um link de recuperação é credencial de acesso
+# total à conta: quanto mais tempo vive numa caixa de email, mais tempo fica
+# exposto a quem venha a ler aquela caixa. Duas horas cobre com folga o uso
+# real — pedir, abrir o email, escolher a senha.
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 2
+
+# Limite de pedidos por janela. Os dois contadores valem ao mesmo tempo: o de
+# IP contém quem varre muitos endereços, o de email contém quem escolhe uma
+# vítima e enche a caixa dela. Nenhum dos dois distingue email cadastrado de
+# não cadastrado, então o limite não vira canal de enumeração.
+PASSWORD_RESET_JANELA = 60 * 60
+PASSWORD_RESET_LIMITE_POR_IP = 5
+PASSWORD_RESET_LIMITE_POR_EMAIL = 3
+
+# Remetente das mensagens automáticas. Em produção precisa ser um endereço do
+# próprio domínio, ou o email cai em spam por falha de SPF/DKIM.
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "Buddhadharma <nao-responda@localhost>")
+
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "forum:index"
 LOGOUT_REDIRECT_URL = "forum:index"

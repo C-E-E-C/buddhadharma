@@ -11,6 +11,8 @@ from urllib.parse import unquote, urlparse
 
 from dotenv import load_dotenv
 
+from apps.core.csp import DIRETIVAS, DIRETIVAS_ADMIN, montar_politica
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 load_dotenv(BASE_DIR / ".env")
@@ -76,6 +78,10 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Logo após o SecurityMiddleware: assim a CSP acompanha toda resposta,
+    # inclusive as de erro e as de redirecionamento, que também renderizam
+    # HTML e também precisam da defesa.
+    "apps.core.middleware.ContentSecurityPolicyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -84,6 +90,29 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# --------------------------------------------------------------------------
+# Content-Security-Policy — §7.1
+# --------------------------------------------------------------------------
+
+# As diretivas moram em apps/core/csp.py; aqui só se resolve o que depende do
+# ambiente. Ver aquele módulo para o porquê de hash em vez de nonce.
+
+# Hashes dos scripts inline servidos pelos templates. Vazio hoje: a Fase 1 não
+# tem nenhum JavaScript. O alternador de tema (BD-005) é o primeiro a entrar
+# aqui, e apps/core/tests/test_csp.py garante que nenhum script inline chegue
+# aos templates sem o hash correspondente nesta tupla.
+CSP_SCRIPT_HASHES: tuple[str, ...] = ()
+
+# Com CSP_REPORT_ONLY=1 o navegador relata as violações e não bloqueia nada.
+# Serve para validar a política contra tráfego real antes de aplicá-la de
+# fato. O padrão é aplicar — uma política que só relata não defende ninguém.
+CSP_REPORT_ONLY = env_bool("CSP_REPORT_ONLY", False)
+
+CSP_ADMIN_PREFIX = "/admin/"
+
+CSP_POLICY = montar_politica(DIRETIVAS, CSP_SCRIPT_HASHES)
+CSP_POLICY_ADMIN = montar_politica(DIRETIVAS_ADMIN, CSP_SCRIPT_HASHES)
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"

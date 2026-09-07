@@ -13,6 +13,7 @@ app_name = "forum"
 # Regra: rota específica antes de rota com parâmetro livre.
 urlpatterns = [
     path("", views.index, name="index"),
+    path("buscar/", views.search, name="search"),
     path("c/<slug:slug>/novo/", views.topic_create, name="topic_create"),
     path("c/<slug:slug>/", views.category, name="category"),
     path("t/<int:pk>/responder/", views.post_create, name="post_create"),

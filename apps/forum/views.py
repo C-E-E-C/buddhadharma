@@ -25,6 +25,7 @@ from apps.core.permissions import is_moderator, require_user
 
 from .forms import PostForm, TopicForm
 from .models import Category, Post, ReactionCount, Topic
+from .search import fuzzy_posts, search_posts
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -156,3 +157,86 @@ def post_create(request: HttpRequest, pk: int) -> HttpResponse:
 
     post = Post.create_in_topic(obj, require_user(request.user), form.cleaned_data["body_md"])
     return redirect(post.get_absolute_url())
+
+
+def _cursor_de_busca(bruto: str | None) -> tuple[float, int] | None:
+    """Lê o cursor de keyset da query string, no formato ``relevancia:id``.
+
+    Cursor é entrada da web como qualquer outra: adulterado, não pode derrubar
+    a página. Formato inválido vira "sem cursor" — a primeira página — e não
+    um erro. Aqui isso é preferível ao 404 que a view de tópico devolve: lá o
+    cursor faz parte de um permalink que alguém pode ter salvo errado, aqui
+    ele é só a continuação de uma lista.
+    """
+    if not bruto:
+        return None
+    relevancia, _, identificador = bruto.partition(":")
+    try:
+        return float(relevancia), int(identificador)
+    except ValueError:
+        return None
+
+
+def search(request: HttpRequest) -> HttpResponse:
+    """Página de busca — §5.
+
+    Chama `search_posts`; nunca monta `SearchQuery` aqui. As duas
+    configurações de busca precisam ser consultadas juntas, e consultar só uma
+    perde metade dos resultados **em silêncio** — é o defeito que a migração
+    0003 documenta. A regra vale mesmo quando a consulta parece simples.
+    """
+    termo = request.GET.get("q", "").strip()
+    por_pagina = settings.FORUM_POSTS_PER_PAGE
+
+    if not termo:
+        # Estado inicial, não lista vazia: quem chega sem termo precisa de
+        # algo para onde ir.
+        return render(
+            request,
+            "forum/search.html",
+            {
+                "termo": "",
+                "categorias": Category.objects.filter(parent__isnull=True).order_by(
+                    "position", "name"
+                ),
+                "recentes": Topic.objects.select_related("category", "author")
+                .exclude(last_post_at__isnull=True)
+                .order_by("-last_post_at")[:10],
+            },
+        )
+
+    apos = _cursor_de_busca(request.GET.get("apos"))
+
+    # O recuo por trigrama não é decidido aqui de novo a cada página: se a
+    # primeira página veio do trigrama, as seguintes também precisam vir, ou
+    # a paginação troca de fonte no meio e repete resultado.
+    aproximado = request.GET.get("aprox") == "1"
+    if aproximado:
+        resultados = list(fuzzy_posts(termo, limit=por_pagina + 1, apos=apos))
+    else:
+        resultados = list(search_posts(termo, limit=por_pagina + 1, apos=apos))
+        if not resultados and apos is None:
+            resultados = list(fuzzy_posts(termo, limit=por_pagina + 1))
+            aproximado = bool(resultados)
+
+    tem_mais = len(resultados) > por_pagina
+    resultados = resultados[:por_pagina]
+
+    proximo = None
+    if tem_mais and resultados:
+        ultimo = resultados[-1]
+        # No trigrama não há relevância; o zero é só o lugar que o formato do
+        # cursor reserva, e a consulta ignora.
+        relevancia = 0.0 if aproximado else getattr(ultimo, "rank", 0.0)
+        proximo = f"{relevancia}:{ultimo.pk}"
+
+    return render(
+        request,
+        "forum/search.html",
+        {
+            "termo": termo,
+            "resultados": resultados,
+            "aproximado": aproximado,
+            "next_cursor": proximo,
+        },
+    )

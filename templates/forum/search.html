@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% if termo %}{{ termo }} — {% endif %}{% translate "Busca" %} — Buddhadharma{% endblock %}
+
+{% block content %}
+<h1>{% translate "Busca" %}</h1>
+
+<form method="get" action="{% url 'forum:search' %}" role="search">
+  <label for="q">{% translate "Buscar no fórum" %}</label>
+  {# `q` na query string, e não no corpo: o resultado precisa ser um endereço #}
+  {# que se copia e se manda para alguém.                                     #}
+  <input type="search" id="q" name="q" value="{{ termo }}"
+         placeholder="{% translate 'anattā, meditação, sangha…' %}">
+  <button type="submit">{% translate "Buscar" %}</button>
+</form>
+
+{% if not termo %}
+  {# Estado inicial. Uma lista vazia aqui seria uma porta fechada. #}
+  <h2>{% translate "Categorias" %}</h2>
+  <ul class="categorias">
+    {% for categoria in categorias %}
+      <li><a href="{{ categoria.get_absolute_url }}">
+        <strong>{{ categoria.name }}</strong>
+        <span class="descricao">{{ categoria.description }}</span>
+      </a></li>
+    {% endfor %}
+  </ul>
+
+  <h2>{% translate "Discussões recentes" %}</h2>
+  <ul class="topicos">
+    {% for topico in recentes %}
+      <li>
+        <a href="{{ topico.get_absolute_url }}">{{ topico.title }}</a>
+        <span class="meta">{{ topico.category.name }} · {{ topico.author.display_name }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+
+{% elif resultados %}
+  {% if aproximado %}
+    {# O trigrama não tem noção de relevância. Quem lê precisa saber que está #}
+    {# vendo aproximação, ou julga o fórum pela ordem de uma lista que não    #}
+    {# tem ordem.                                                            #}
+    <p class="aviso">
+      {% blocktranslate %}Nada casou exatamente. Estes resultados são aproximados, por semelhança de escrita, e não estão ordenados por relevância.{% endblocktranslate %}
+    </p>
+  {% endif %}
+
+  <ul class="resultados">
+    {% for post in resultados %}
+      <li>
+        <a href="{{ post.get_absolute_url }}">{{ post.topic.title }}</a>
+        <span class="meta">
+          {{ post.author.display_name }} · {{ post.created_at|date:"j \d\e F \d\e Y" }}
+        </span>
+        {# Do HTML já renderizado e sanitizado, sem as tags: o Markdown cru #}
+        {# mostraria a sintaxe do link em vez do texto dele. O destaque do   #}
+        {# trecho que casou é a BD-014.                                      #}
+        <p class="trecho">{{ post.body_html|striptags|truncatewords:40 }}</p>
+      </li>
+    {% endfor %}
+  </ul>
+
+  {% if next_cursor %}
+    <a class="mais" href="?q={{ termo|urlencode }}&amp;apos={{ next_cursor|urlencode }}{% if aproximado %}&amp;aprox=1{% endif %}">
+      {% translate "Mais resultados" %}
+    </a>
+  {% endif %}
+
+{% else %}
+  <p class="vazio">
+    {% blocktranslate %}Nada encontrado para este termo — nem exato, nem aproximado.{% endblocktranslate %}
+  </p>
+  <p class="ajuda">
+    {% blocktranslate %}Aspas buscam a expressão exata, um hífen antes da palavra a exclui, e "or" aceita alternativas.{% endblocktranslate %}
+  </p>
+{% endif %}
+{% endblock %}

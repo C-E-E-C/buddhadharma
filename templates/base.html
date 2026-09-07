@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Buddhadharma{% endblock %}</title>
+  {# tokens.css primeiro: define as custom properties que forum.css consome. #}
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
   <link rel="stylesheet" href="{% static 'css/forum.css' %}">
   {# HTMX entra na Fase 2, junto com as reações — é o primeiro recurso que   #}
   {# realmente precisa de atualização parcial. Até lá a Fase 1 funciona com  #}

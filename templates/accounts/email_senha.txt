@@ -1,0 +1,14 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate %}Olá.
+
+Alguém pediu para redefinir a senha da conta associada a este email no fórum Buddhadharma.{% endblocktranslate %}
+
+{% translate "Para escolher uma senha nova, abra este endereço:" %}
+
+{{ protocol }}://{{ domain }}{% url 'accounts:password_reset_confirm' uidb64=uid token=token %}
+
+{% translate "O link serve uma vez só e expira." %}
+
+{% blocktranslate %}Se não foi você quem pediu, não é preciso fazer nada: a senha atual continua valendo e ninguém teve acesso à sua conta.{% endblocktranslate %}
+
+{% translate "Buddhadharma" %}
+{% endautoescape %}

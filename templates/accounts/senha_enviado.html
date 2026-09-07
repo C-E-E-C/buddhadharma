@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Link enviado" %} — Buddhadharma{% endblock %}
+
+{% block content %}
+<h1>{% translate "Link enviado" %}</h1>
+{# Redação deliberada: "se houver uma conta". Confirmar o envio revelaria    #}
+{# quais endereços têm conta — exatamente o que a §7.3 evita.                #}
+<p>
+  {% translate "Se houver uma conta com esse email, um link para escolher uma senha nova acabou de ser enviado. Confira também a caixa de spam." %}
+</p>
+<p class="ajuda">
+  {% blocktranslate %}O link vale por tempo limitado e serve uma vez só.{% endblocktranslate %}
+</p>
+<p><a href="{% url 'forum:index' %}">{% translate "Voltar ao início" %}</a></p>
+{% endblock %}

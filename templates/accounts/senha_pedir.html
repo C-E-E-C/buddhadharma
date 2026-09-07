@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Recuperar senha" %} — Buddhadharma{% endblock %}
+
+{% block content %}
+<h1>{% translate "Recuperar senha" %}</h1>
+<p>
+  {% translate "Informe o email da sua conta. Se houver uma conta com esse endereço, enviaremos um link para escolher uma senha nova." %}
+</p>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">{% translate "Enviar link" %}</button>
+</form>
+<p><a href="{% url 'accounts:login' %}">{% translate "Voltar para entrar" %}</a></p>
+{% endblock %}

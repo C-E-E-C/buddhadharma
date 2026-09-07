@@ -1,0 +1,207 @@
+/* Sistema de design — tokens. Transcreve docs/DESIGN.md §2, §3, §4 e §7.
+ *
+ * Duas camadas, e a ordem entre elas é a regra que sustenta o tema escuro:
+ *
+ *   1. a rampa      — valores crus, nunca usados direto por um componente
+ *   2. os semânticos — é isto que os componentes usam
+ *
+ * A rampa se inverte entre os temas: no claro só 600–900 são legíveis sobre o
+ * fundo, no escuro só 100–500. Um componente que referencie `--quente-700`
+ * fica ilegível no escuro e ninguém percebe até alguém reclamar. Por isso todo
+ * componente passa por token semântico, e o tema troca o valor por baixo.
+ *
+ * Três estados de tema, não dois: claro, escuro e *sistema* (§5). Sistema é o
+ * padrão e não estampa atributo nenhum na raiz.
+ *
+ * Nenhuma cor pode existir **apenas** dentro de `@media` ou de `[data-theme]`.
+ * No estado "sistema" o atributo não é estampado; uma cor definida só ali
+ * some, e a página renderiza texto de um tema sobre o fundo do outro. O
+ * bloco `:root` abaixo define **todos** os semânticos; os outros dois só
+ * trocam valores que já existem.
+ */
+
+:root {
+  /* ---- Rampa quente — §2. Do açafrão ao vermelho profundo. ------------- */
+  /* Contrastes na tabela do DESIGN.md; apps/core/tests/test_tokens.py os
+   * recalcula a partir deste arquivo, para a medida não virar folclore. */
+  --quente-100: #fdf3e0;
+  --quente-200: #fae3b8;
+  --quente-300: #f5c766;
+  --quente-400: #efa92b;
+  --quente-500: #dc7726;
+  --quente-600: #c4521f;
+  --quente-700: #a6321e;
+  --quente-800: #7e2418;
+  --quente-900: #5a1b15;
+
+  /* ---- Neutros quentes — §4 -------------------------------------------- */
+  /* Viés quente de propósito: neutro frio convive com a paleta, não pertence
+   * a ela. */
+  --neutro-claro-fundo: #faf9f7;
+  --neutro-claro-superficie: #ffffff;
+  --neutro-claro-tinta: #1c1714;
+  --neutro-claro-tinta-suave: #6b605a;
+  --neutro-claro-borda: #e6dfd7;
+
+  --neutro-escuro-fundo: #17120e;
+  --neutro-escuro-superficie: #1f1813;
+  --neutro-escuro-tinta: #f2ede8;
+  --neutro-escuro-tinta-suave: #a79c95;
+  --neutro-escuro-borda: #3a302a;
+
+  /* ---- Estados de sistema — §3 ----------------------------------------- */
+  /* Verde e azul ficam fora da família quente de propósito: dão o alívio
+   * cromático que uma paleta só quente não tem, e não competem com a marca. */
+  --perigo-claro: #b3261e;
+  --perigo-escuro: #f2766b;
+  --sucesso-claro: #2f6b4f;
+  --sucesso-escuro: #6fbf95;
+  --info-claro: #1f5f8b;
+  --info-escuro: #6fb3dc;
+
+  /* ==== Semânticos — tema claro ========================================= */
+  color-scheme: light;
+
+  --fundo: var(--neutro-claro-fundo);
+  --superficie: var(--neutro-claro-superficie);
+  --tinta: var(--neutro-claro-tinta);
+  --tinta-suave: var(--neutro-claro-tinta-suave);
+  --borda: var(--neutro-claro-borda);
+
+  /* Acento como tinta: precisa de 4.5:1 sobre o fundo. No claro é o 700. */
+  --acento: var(--quente-700);
+
+  /* Acento como superfície: o par preenchimento + rótulo anda junto, porque
+   * é o par que precisa passar no contraste. No claro, 600 com rótulo branco
+   * (4.59:1); branco sobre o 500 daria 3.13:1 e reprovaria. */
+  --acento-superficie: var(--quente-600);
+  --acento-rotulo: #ffffff;
+
+  --perigo: var(--perigo-claro);
+  --sucesso: var(--sucesso-claro);
+  --info: var(--info-claro);
+
+  /* Aviso é fundo tingido e borda, nunca tinta: amarelo como texto reprova
+   * em qualquer tamanho sobre fundo claro (§3). O texto do aviso é --tinta. */
+  --aviso-borda: var(--quente-600);
+  --aviso-fundo: color-mix(in srgb, var(--quente-400) 18%, var(--fundo));
+
+  /* Realce de trecho na busca (BD-014) e faixa de destaque. */
+  --realce: color-mix(in srgb, var(--quente-300) 55%, var(--fundo));
+
+  --foco: var(--quente-600);
+
+  /* ---- Tipografia — §7 -------------------------------------------------- */
+  /* A pilha precisa cobrir português com acentos e os diacríticos do Pāli
+   * (anattā, saṅgha). A fonte própria é decisão em aberto (§9.1); até lá, a
+   * pilha do sistema já cobre latino estendido em todas as plataformas. */
+  --fonte: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  --fonte-mono: ui-monospace, SFMono-Regular, "Cascadia Mono", Menlo, monospace;
+
+  /* Escala em razão 1.2 a partir de 1rem, arredondada. */
+  --texto-pp: 0.79rem;
+  --texto-p: 0.875rem;
+  --texto-m: 1rem;
+  --texto-g: 1.2rem;
+  --texto-gg: 1.44rem;
+  --texto-ggg: 1.728rem;
+
+  --altura-corpo: 1.65;
+  --altura-titulo: 1.25;
+
+  /* Medida de leitura: 65–75 caracteres no corpo do post (§7). */
+  --medida: 68ch;
+
+  /* ---- Espaçamento ----------------------------------------------------- */
+  --esp-1: 0.25rem;
+  --esp-2: 0.5rem;
+  --esp-3: 0.75rem;
+  --esp-4: 1rem;
+  --esp-5: 1.5rem;
+  --esp-6: 2rem;
+  --esp-7: 3rem;
+
+  --raio: 4px;
+  --raio-pilula: 999px;
+
+  /* Alvo de toque mínimo, §7. Vale sobretudo para o botão de reagir. */
+  --alvo-toque: 44px;
+}
+
+/* Escuro por preferência do sistema.
+ *
+ * A guarda `:not([data-theme="light"])` é o que faz uma escolha explícita por
+ * claro vencer um sistema em escuro. Sem ela, quem pediu claro no fórum e usa
+ * o telemóvel em escuro recebe escuro assim mesmo. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --fundo: var(--neutro-escuro-fundo);
+    --superficie: var(--neutro-escuro-superficie);
+    --tinta: var(--neutro-escuro-tinta);
+    --tinta-suave: var(--neutro-escuro-tinta-suave);
+    --borda: var(--neutro-escuro-borda);
+
+    /* A rampa inverte: no escuro o acento como tinta é o 400. */
+    --acento: var(--quente-400);
+
+    /* E o preenchimento vira 500 com rótulo escuro — branco sobre 500 não
+     * passa, mas tinta escura sobre 500 passa com folga. */
+    --acento-superficie: var(--quente-500);
+    --acento-rotulo: var(--neutro-escuro-fundo);
+
+    --perigo: var(--perigo-escuro);
+    --sucesso: var(--sucesso-escuro);
+    --info: var(--info-escuro);
+
+    --aviso-borda: var(--quente-400);
+    --aviso-fundo: color-mix(in srgb, var(--quente-400) 14%, var(--fundo));
+
+    --realce: color-mix(in srgb, var(--quente-500) 40%, var(--fundo));
+
+    --foco: var(--quente-400);
+  }
+}
+
+/* Escuro por escolha explícita. Repete os mesmos valores do bloco acima —
+ * duplicação deliberada: são gatilhos independentes, e um `:is()` unindo os
+ * dois faria a media query invalidar a regra inteira em navegador que não a
+ * suporte. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --fundo: var(--neutro-escuro-fundo);
+  --superficie: var(--neutro-escuro-superficie);
+  --tinta: var(--neutro-escuro-tinta);
+  --tinta-suave: var(--neutro-escuro-tinta-suave);
+  --borda: var(--neutro-escuro-borda);
+
+  --acento: var(--quente-400);
+  --acento-superficie: var(--quente-500);
+  --acento-rotulo: var(--neutro-escuro-fundo);
+
+  --perigo: var(--perigo-escuro);
+  --sucesso: var(--sucesso-escuro);
+  --info: var(--info-escuro);
+
+  --aviso-borda: var(--quente-400);
+  --aviso-fundo: color-mix(in srgb, var(--quente-400) 14%, var(--fundo));
+
+  --realce: color-mix(in srgb, var(--quente-500) 40%, var(--fundo));
+
+  --foco: var(--quente-400);
+}
+
+/* Movimento — §7. Nenhuma animação é essencial para entender o estado, então
+ * desligar tudo é seguro. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

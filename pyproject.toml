@@ -35,7 +35,11 @@ dev = [
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-extend-exclude = ["*/migrations/*"]
+# Os blocos de código na documentação são recortes ilustrativos: trechos
+# parciais, cortados com reticências, escritos para serem lidos. `ruff format`
+# formata código embutido em Markdown, e reprovava `docs/TAREFAS.md` — CI
+# vermelho sem que houvesse nada errado no código de verdade.
+extend-exclude = ["*/migrations/*", "docs/*"]
 
 [tool.ruff.lint]
 select = [
